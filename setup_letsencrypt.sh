@@ -5,7 +5,7 @@ sudo apt update
 sudo apt install -y certbot python3-certbot-nginx
 
 # Replace 'your-domain.com' with your actual domain
-DOMAIN="your-domain.com"
+DOMAIN="tunel.healthailabs.com"
 
 # Stop nginx temporarily
 sudo systemctl stop nginx
