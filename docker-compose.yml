@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  fastapi:
+    build: .
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./elise:/app/elise
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

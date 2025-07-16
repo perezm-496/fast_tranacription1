@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Consultation Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .consultation-info {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #1e7e34;
+        }
+        .back-link {
+            margin-bottom: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        .recording-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+        .oscilloscope {
+            width: 100%;
+            height: 100px;
+            background-color: #000;
+            border-radius: 4px;
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .oscilloscope canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .chat-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+        .chat-input {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .resources-section {
+            margin-top: 30px;
+        }
+        .resource-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid #007bff;
+        }
+        .resource-item.transcript {
+            border-left-color: #28a745;
+        }
+        .resource-item.question {
+            border-left-color: #ffc107;
+        }
+        .resource-item.report {
+            border-left-color: #dc3545;
+        }
+        .resource-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .resource-content {
+            color: #666;
+            line-height: 1.5;
+        }
+        .resource-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        .status-message {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dc3545;
+            margin-right: 8px;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="back-link">
+            <a href="#" onclick="goBack()">← Back to Patient Dashboard</a>
+        </div>
+        
+        <h1>Consultation Dashboard</h1>
+        
+        <div class="consultation-info">
+            <p><strong>Patient:</strong> <span id="patient-name"></span></p>
+            <p><strong>Date:</strong> <span id="consultation-date"></span></p>
+            <p><strong>Description:</strong> <span id="consultation-description"></span></p>
+        </div>
+        
+        <div id="status-message" class="status-message"></div>
+        
+        <!-- Recording Section -->
+        <div class="recording-section">
+            <h3>Audio Recording</h3>
+            <div class="button-group">
+                <button id="record-btn" class="btn btn-primary" onclick="toggleRecording()">
+                    <span id="record-icon" class="recording-indicator hidden"></span>
+                    Start Recording
+                </button>
+                <button id="stop-btn" class="btn btn-danger hidden" onclick="stopRecording()">Stop Recording</button>
+            </div>
+            <div class="oscilloscope">
+                <canvas id="oscilloscope" width="800" height="100"></canvas>
+            </div>
+        </div>
+        
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <h3>Ask a Question</h3>
+            <textarea id="chat-input" class="chat-input" placeholder="Type your question here..."></textarea>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="sendQuestion()">Send Question</button>
+            </div>
+        </div>
+        
+        <!-- Report Section -->
+        <div class="button-group">
+            <button class="btn btn-success" onclick="createReport()">Create Report</button>
+        </div>
+        
+        <!-- Resources Section -->
+        <div class="resources-section">
+            <h2>Resources</h2>
+            <div id="loading" class="loading">Loading resources...</div>
+            <div id="resources-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const consultationId = new URLSearchParams(window.location.search).get('consultation_id');
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+            window.location.href = '/views/login';
+        }
+
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let animationId = null;
+
+        function goBack() {
+            const patientId = new URLSearchParams(window.location.search).get('patient_id');
+            if (patientId) {
+                window.location.href = `/views/patient-dashboard?patient_id=${patientId}&token=${token}`;
+            } else {
+                // Try to get patient_id from consultation data
+                window.location.href = `/views/dashboard?token=${token}`;
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        async function loadConsultation() {
+            try {
+                const response = await fetch(`/api/consultations/${consultationId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const consultation = await response.json();
+                    console.log('Loaded consultation:', consultation);
+                    displayConsultationInfo(consultation);
+                    displayResources(consultation.resources);
+                } else if (response.status === 401) {
+                    localStorage.removeItem('access_token');
+                    window.location.href = '/views/login';
+                } else {
+                    console.error('Failed to load consultation');
+                    showStatus('Failed to load consultation', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading consultation:', error);
+                showStatus('Error loading consultation', 'error');
+            }
+        }
+
+        function displayConsultationInfo(consultation) {
+            document.getElementById('patient-name').textContent = `${consultation.patient_name} ${consultation.patient_last_name}`;
+            document.getElementById('consultation-date').textContent = `${new Date(consultation.date).toLocaleDateString()} ${consultation.time}`;
+            document.getElementById('consultation-description').textContent = consultation.description;
+        }
+
+        function displayResources(resources) {
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('resources-container');
+            
+            loading.style.display = 'none';
+            container.innerHTML = '';
+
+            console.log('Displaying resources:', resources);
+
+            if (!resources || resources.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No resources yet. Start recording or ask a question!</p>';
+                return;
+            }
+
+            resources.forEach((resource, index) => {
+                console.log(`Processing resource ${index}:`, resource);
+                
+                const resourceDiv = document.createElement('div');
+                resourceDiv.className = `resource-item ${resource[0]}`;
+                
+                let header = '';
+                let content = '';
+                let time = '';
+
+                if (resource[0] === 'transcript') {
+                    header = `Transcription ${index + 1}`;
+                    content = resource[2];
+                    time = new Date(resource[1]).toLocaleString();
+                } else if (resource[0] === 'question') {
+                    header = `Q&A ${index + 1}`;
+                    content = `<strong>Question:</strong> ${resource[1]}<br><strong>Answer:</strong> ${resource[2]}`;
+                } else if (resource[0] === 'report') {
+                    header = `Report ${index + 1}`;
+                    content = resource[2];
+                    time = new Date(resource[1]).toLocaleString();
+                }
+
+                resourceDiv.innerHTML = `
+                    <div class="resource-header">${header}</div>
+                    <div class="resource-content">${content}</div>
+                    ${time ? `<div class="resource-time">${time}</div>` : ''}
+                `;
+                
+                container.appendChild(resourceDiv);
+            });
+        }
+
+        async function toggleRecording() {
+            if (!isRecording) {
+                await startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await uploadAudio(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                
+                // Update UI
+                document.getElementById('record-btn').classList.add('hidden');
+                document.getElementById('stop-btn').classList.remove('hidden');
+                document.getElementById('record-icon').classList.remove('hidden');
+                
+                // Start oscilloscope
+                startOscilloscope(stream);
+                
+                showStatus('Recording started', 'info');
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                showStatus('Error starting recording. Please check microphone permissions.', 'error');
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                // Update UI
+                document.getElementById('record-btn').classList.remove('hidden');
+                document.getElementById('stop-btn').classList.add('hidden');
+                document.getElementById('record-icon').classList.add('hidden');
+                
+                // Stop oscilloscope
+                stopOscilloscope();
+                
+                showStatus('Recording stopped. Processing audio...', 'info');
+            }
+        }
+
+        function startOscilloscope(stream) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            microphone = audioContext.createMediaStreamSource(stream);
+            
+            analyser.fftSize = 256;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            microphone.connect(analyser);
+            
+            const canvas = document.getElementById('oscilloscope');
+            const canvasCtx = canvas.getContext('2d');
+            
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                
+                analyser.getByteTimeDomainData(dataArray);
+                
+                canvasCtx.fillStyle = 'rgb(0, 0, 0)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = 'rgb(0, 255, 0)';
+                canvasCtx.beginPath();
+                
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+                    
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+            
+            draw();
+        }
+
+        function stopOscilloscope() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+        }
+
+        async function uploadAudio(audioBlob) {
+            try {
+                const formData = new FormData();
+                formData.append('file', audioBlob, 'recording.webm');
+                formData.append('consultation_id', consultationId);
+                
+                const response = await fetch('/api/ai/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('Audio uploaded. Transcribing...', 'info');
+                    await waitForTranscription(result.task_id);
+                } else {
+                    const errorData = await response.json();
+                    showStatus(`Error uploading audio: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error uploading audio:', error);
+                showStatus('Error uploading audio', 'error');
+            }
+        }
+
+        async function waitForTranscription(taskId) {
+            try {
+                const response = await fetch(`/api/ai/transcribe/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.status === 'completed') {
+                        showStatus('Transcription completed!', 'success');
+                        loadConsultation(); // Refresh the page to show new resources
+                    } else if (result.status === 'failed') {
+                        showStatus(`Transcription failed: ${result.error}`, 'error');
+                    } else {
+                        // Still processing, check again in 2 seconds
+                        setTimeout(() => waitForTranscription(taskId), 2000);
+                    }
+                } else {
+                    showStatus('Error checking transcription status', 'error');
+                }
+            } catch (error) {
+                console.error('Error checking transcription status:', error);
+                showStatus('Error checking transcription status', 'error');
+            }
+        }
+
+        async function sendQuestion() {
+            const question = document.getElementById('chat-input').value.trim();
+            if (!question) {
+                showStatus('Please enter a question', 'error');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('prompt', question);
+                formData.append('consultation_id', consultationId);
+                
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('Question sent. Processing...', 'info');
+                    document.getElementById('chat-input').value = '';
+                    await waitForChatCompletion(result.task_id);
+                } else {
+                    const errorData = await response.json();
+                    showStatus(`Error sending question: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error sending question:', error);
+                showStatus('Error sending question', 'error');
+            }
+        }
+
+        async function waitForChatCompletion(taskId) {
+            try {
+                const response = await fetch(`/api/ai/chat/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.status === 'completed') {
+                        showStatus('Question answered!', 'success');
+                        loadConsultation(); // Refresh the page to show new resources
+                    } else if (result.status === 'failed') {
+                        showStatus(`Chat failed: ${result.error}`, 'error');
+                    } else {
+                        // Still processing, check again in 2 seconds
+                        setTimeout(() => waitForChatCompletion(taskId), 2000);
+                    }
+                } else {
+                    showStatus('Error checking chat status', 'error');
+                }
+            } catch (error) {
+                console.error('Error checking chat status:', error);
+                showStatus('Error checking chat status', 'error');
+            }
+        }
+
+        async function createReport() {
+            try {
+                const formData = new FormData();
+                formData.append('consultation_id', consultationId);
+                
+                const response = await fetch('/api/ai/create_reporte', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('Creating report...', 'info');
+                    await waitForReportCreation(result.task_id);
+                } else {
+                    const errorData = await response.json();
+                    showStatus(`Error creating report: ${errorData.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error creating report:', error);
+                showStatus('Error creating report', 'error');
+            }
+        }
+
+        async function waitForReportCreation(taskId) {
+            try {
+                const response = await fetch(`/api/ai/create_reporte/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    if (result.status === 'completed') {
+                        showStatus('Report created successfully!', 'success');
+                        loadConsultation(); // Refresh the page to show new report
+                    } else if (result.status === 'failed') {
+                        showStatus(`Report creation failed: ${result.error}`, 'error');
+                    } else {
+                        // Still processing, check again in 2 seconds
+                        setTimeout(() => waitForReportCreation(taskId), 2000);
+                    }
+                } else {
+                    showStatus('Error checking report status', 'error');
+                }
+            } catch (error) {
+                console.error('Error checking report status:', error);
+                showStatus('Error checking report status', 'error');
+            }
+        }
+
+        // Load consultation when page loads
+        loadConsultation();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Patient Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .patient-info {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .consultations-section {
+            margin-top: 30px;
+        }
+        .consultations-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .consultations-table th,
+        .consultations-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .consultations-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .consultations-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .consultations-table tr:hover {
+            background-color: #e9ecef;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        .no-consultations {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+        .back-link {
+            margin-bottom: 20px;
+        }
+        .back-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="back-link">
+            <a href="#" onclick="goBack()">← Back to Dashboard</a>
+        </div>
+        
+        <h1>Patient: <span id="patient-name"></span></h1>
+        
+        <div class="patient-info">
+            <p><strong>Name:</strong> <span id="patient-full-name"></span></p>
+            <p><strong>Date of Birth:</strong> <span id="patient-dob"></span></p>
+            <p><strong>Description:</strong> <span id="patient-description"></span></p>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="addConsultation()" class="btn btn-primary">Add New Consultation</button>
+        </div>
+        
+        <div class="consultations-section">
+            <h2>Consultations</h2>
+            <div id="loading" class="loading">Loading consultations...</div>
+            <div id="no-consultations" class="no-consultations" style="display: none;">No consultations found. Add your first consultation!</div>
+            <table id="consultations-table" class="consultations-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Description</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+                <tbody id="consultations-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const patientId = new URLSearchParams(window.location.search).get('patient_id');
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+            window.location.href = '/views/login';
+        }
+
+        function goBack() {
+            window.location.href = `/views/dashboard?token=${token}`;
+        }
+
+        function addConsultation() {
+            window.location.href = `/views/add-consultation?patient_id=${patientId}&token=${token}`;
+        }
+
+        function viewConsultation(consultationId) {
+            window.location.href = `/views/consultation-dashboard?consultation_id=${consultationId}&token=${token}`;
+        }
+
+        async function loadConsultations() {
+            try {
+                const response = await fetch(`/api/consultations/patient/${patientId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const consultations = await response.json();
+                    displayConsultations(consultations);
+                } else if (response.status === 401) {
+                    localStorage.removeItem('access_token');
+                    window.location.href = '/views/login';
+                } else {
+                    console.error('Failed to load consultations');
+                }
+            } catch (error) {
+                console.error('Error loading consultations:', error);
+            }
+        }
+
+        function displayConsultations(consultations) {
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('consultations-table');
+            const tbody = document.getElementById('consultations-tbody');
+            const noConsultations = document.getElementById('no-consultations');
+
+            loading.style.display = 'none';
+
+            if (consultations.length === 0) {
+                noConsultations.style.display = 'block';
+                return;
+            }
+
+            // Display patient info from first consultation
+            if (consultations.length > 0) {
+                const firstConsultation = consultations[0];
+                document.getElementById('patient-name').textContent = `${firstConsultation.patient_name} ${firstConsultation.patient_last_name}`;
+                document.getElementById('patient-full-name').textContent = `${firstConsultation.patient_name} ${firstConsultation.patient_last_name}`;
+                document.getElementById('patient-dob').textContent = new Date(firstConsultation.patient_date_of_birth).toLocaleDateString();
+                document.getElementById('patient-description').textContent = firstConsultation.patient_description || 'No description';
+            }
+
+            table.style.display = 'table';
+            tbody.innerHTML = '';
+
+            consultations.forEach(consultation => {
+                const row = document.createElement('tr');
+                const dateTime = new Date(consultation.date);
+                const time = consultation.time;
+                const dateTimeStr = `${dateTime.toLocaleDateString()} ${time}`;
+                
+                row.innerHTML = `
+                    <td>${dateTimeStr}</td>
+                    <td><a href="#" onclick="viewConsultation('${consultation.consultation_id}')" style="color: #007bff; text-decoration: none;">${consultation.description}</a></td>
+                    <td>${consultation.report_txt || 'No report'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load consultations when page loads
+        loadConsultations();
+    </script>
+</body>
+</html> 

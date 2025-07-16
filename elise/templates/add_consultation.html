@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Consultation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="date"], input[type="time"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            display: none;
+        }
+        .patient-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Add New Consultation</h1>
+        
+        <div id="patient-info" class="patient-info">
+            <p><strong>Patient:</strong> <span id="patient-name"></span></p>
+        </div>
+        
+        <div id="error-message" class="error"></div>
+        <div id="success-message" class="success"></div>
+        <div id="loading" class="loading">Creating consultation...</div>
+        
+        <form id="consultation-form">
+            <div class="form-group">
+                <label for="date">Date *</label>
+                <input type="date" id="date" name="date" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="time">Time *</label>
+                <input type="time" id="time" name="time" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea id="description" name="description" placeholder="Enter consultation description..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="report_txt">Report</label>
+                <textarea id="report_txt" name="report_txt" placeholder="Enter consultation report (optional)..."></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" id="submit-btn" class="btn btn-primary">Create Consultation</button>
+                <button type="button" onclick="cancelCreate()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const patientId = new URLSearchParams(window.location.search).get('patient_id');
+        const token = localStorage.getItem('access_token');
+        
+        if (!token) {
+            window.location.href = '/views/login';
+        }
+
+        // Load patient info
+        async function loadPatientInfo() {
+            try {
+                const response = await fetch(`/api/patients/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const patients = await response.json();
+                    const patient = patients.find(p => p._id === patientId);
+                    if (patient) {
+                        document.getElementById('patient-name').textContent = `${patient.first_name} ${patient.last_name}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading patient info:', error);
+            }
+        }
+
+        document.getElementById('consultation-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const loading = document.getElementById('loading');
+            
+            // Reset UI
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                // Get form data
+                const formData = new FormData(e.target);
+                const consultationData = {
+                    patient_id: patientId,
+                    date: formData.get('date'),
+                    time: formData.get('time'),
+                    description: formData.get('description'),
+                    report_txt: formData.get('report_txt') || ""
+                };
+                
+                const response = await fetch('/api/consultations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(consultationData)
+                });
+                
+                if (response.ok) {
+                    successMessage.textContent = 'Consultation created successfully!';
+                    successMessage.style.display = 'block';
+                    
+                    // Reset form
+                    e.target.reset();
+                    
+                    // Redirect to patient dashboard after a short delay
+                    setTimeout(() => {
+                        window.location.href = `/views/patient-dashboard?patient_id=${patientId}&token=${token}`;
+                    }, 2000);
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = errorData.detail || 'Failed to create consultation. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Network error. Please try again.';
+                errorMessage.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function cancelCreate() {
+            window.location.href = `/views/patient-dashboard?patient_id=${patientId}&token=${token}`;
+        }
+
+        // Load patient info when page loads
+        loadPatientInfo();
+    </script>
+</body>
+</html> 

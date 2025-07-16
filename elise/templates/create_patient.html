@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Patient</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="date"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Create New Patient</h1>
+        
+        <div id="error-message" class="error"></div>
+        <div id="success-message" class="success"></div>
+        <div id="loading" class="loading">Creating patient...</div>
+        
+        <form id="patient-form">
+            <div class="form-group">
+                <label for="first_name">First Name *</label>
+                <input type="text" id="first_name" name="first_name" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="middle_name">Middle Name</label>
+                <input type="text" id="middle_name" name="middle_name" />
+            </div>
+            
+            <div class="form-group">
+                <label for="last_name">Last Name *</label>
+                <input type="text" id="last_name" name="last_name" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="second_last_name">Second Last Name</label>
+                <input type="text" id="second_last_name" name="second_last_name" />
+            </div>
+            
+            <div class="form-group">
+                <label for="address">Address *</label>
+                <input type="text" id="address" name="address" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="date_of_birth">Date of Birth *</label>
+                <input type="date" id="date_of_birth" name="date_of_birth" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" placeholder="Enter any additional notes about the patient..."></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" id="submit-btn" class="btn btn-primary">Create Patient</button>
+                <button type="button" onclick="cancelCreate()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('patient-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const errorMessage = document.getElementById('error-message');
+            const successMessage = document.getElementById('success-message');
+            const loading = document.getElementById('loading');
+            
+            // Reset UI
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            try {
+                // Get form data
+                const formData = new FormData(e.target);
+                const patientData = {
+                    first_name: formData.get('first_name'),
+                    middle_name: formData.get('middle_name') || null,
+                    last_name: formData.get('last_name'),
+                    second_last_name: formData.get('second_last_name') || null,
+                    address: formData.get('address'),
+                    date_of_birth: formData.get('date_of_birth'),
+                    description: formData.get('description') || null
+                };
+                
+                // Get token from localStorage
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    window.location.href = '/views/login';
+                    return;
+                }
+                
+                const response = await fetch('/api/patients/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(patientData)
+                });
+                
+                if (response.ok) {
+                    successMessage.textContent = 'Patient created successfully!';
+                    successMessage.style.display = 'block';
+                    
+                    // Reset form
+                    e.target.reset();
+                    
+                    // Redirect to dashboard after a short delay
+                    setTimeout(() => {
+                        const token = localStorage.getItem('access_token');
+                        window.location.href = `/views/dashboard?token=${token}`;
+                    }, 2000);
+                } else {
+                    const errorData = await response.json();
+                    errorMessage.textContent = errorData.detail || 'Failed to create patient. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Network error. Please try again.';
+                errorMessage.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function cancelCreate() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                window.location.href = `/views/dashboard?token=${token}`;
+            } else {
+                window.location.href = '/views/login';
+            }
+        }
+    </script>
+</body>
+</html> 
