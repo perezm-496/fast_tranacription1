@@ -42,18 +42,20 @@ services:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - app-network
+
   celery_worker:
     build: .
     container_name: celery_worker
-    command: celery -A elise.celery_worker worker --loglevel=info
+    command: celery -A celery_worker worker --loglevel=info
     volumes:
-      - ./elise:/app/elise
+      - .:/app
     env_file:
       - .env
     depends_on:
       - redis
       - mongo
-      - fastapi
+    networks:
+      - app-network
 
 volumes:
   redis_data:
