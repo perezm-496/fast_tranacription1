@@ -1,35 +1,35 @@
 import requests
 
-BASE_URL = "http://localhost:8000/elise"
+from pymongo import MongoClient
+from bson import ObjectId
+import bcrypt
+
+# Connect to MongoDB
+client = MongoClient(
+    "mongodb://elise:elise_can_open_doors@localhost:27017/elise_db?authSource=admin"
+)
+db = client.elise_db
 
 # User info
 user_data = {
-    "name": "Alice",
-    "surename": "Wonderland",
-    "email": "alice@example.com",
-    "phone_number": "1234567890",
-    "password": "securepass123"
+    "name": "Andrea", 
+    "surename": "Lara",
+    "email": "andrea@healthailabs.com",
+    "phone_number": "+52 55 5555 5555",
+    "password": bcrypt.hashpw("¿Cuál es su pass?".encode(), bcrypt.gensalt())
 }
 
 # Step 1: Create User
-response = requests.post(f"{BASE_URL}/users/", json=user_data)
-if response.status_code != 200:
-    print("Failed to create user:", response.json())
-    exit(1)
-
-user_id = response.json()["id"]
+result = db.users.insert_one(user_data)
+user_id = str(result.inserted_id)
 print("✅ User created:", user_id)
 
 # Step 2: Create Membership
 membership_data = {
-    "user_id": user_id,
+    "user_id": ObjectId(user_id),
     "type": "Testing",
     "available": 10 * 100
 }
 
-response = requests.post(f"{BASE_URL}/memberships/", json=membership_data)
-if response.status_code != 200:
-    print("Failed to create membership:", response.json())
-    exit(1)
-
-print("✅ Membership created:", response.json())
+result = db.memberships.insert_one(membership_data)
+print("✅ Membership created:", str(result.inserted_id))
