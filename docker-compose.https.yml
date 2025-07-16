@@ -65,3 +65,18 @@ volumes:
 networks:
   app-network:
     driver: bridge 
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A elise.celery_worker worker --loglevel=info
+    volumes:
+      - ./elise:/app/elise
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - mongo
+      - fastapi
+    networks:
+      - app-network    
