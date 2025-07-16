@@ -2,7 +2,7 @@
 # from datetime import datetime
 
 # # Connection URI
-# uri = "mongodb://elise:elise_can_open_doors@localhost:27017/elise_db?authSource=elise_db"
+# uri = "mongodb://elise:elise_can_open_doors@mongo:27017/elise_db?authSource=elise_db"
 
 # # Connect to MongoDB
 # client = MongoClient(uri)
@@ -25,7 +25,7 @@
 
 from pymongo import MongoClient
 
-uri = "mongodb://elise:elise_can_open_doors@localhost:27017/elise_db?authSource=elise_db"
+uri = "mongodb://elise:elise_can_open_doors@mongo:27017/elise_db?authSource=elise_db"
 client = MongoClient(uri)
 
 print(client.list_database_names())

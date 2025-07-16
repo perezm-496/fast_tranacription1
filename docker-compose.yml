@@ -12,6 +12,9 @@ services:
       - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      - mongo
+      - redis
 
   redis:
     image: redis:latest
@@ -20,6 +23,19 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo_server
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: elise
+      MONGO_INITDB_ROOT_PASSWORD: elise_can_open_doors
+      MONGO_INITDB_DATABASE: elise_db
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
 
   celery_worker:
     build: .
@@ -31,7 +47,9 @@ services:
       - .env
     depends_on:
       - redis
+      - mongo
       - fastapi
 
 volumes:
   redis_data:
+  mongo_data:
