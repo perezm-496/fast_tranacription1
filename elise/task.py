@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 
 celery_app = Celery(
     "worker",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/1"
+    broker=os.getenv("CELERY_BROKER"),
+    backend=os.getenv("CELERY_BACKEND")
 )
 
 # Configure Celery Beat schedule
