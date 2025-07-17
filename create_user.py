@@ -3,18 +3,17 @@ import requests
 from pymongo import MongoClient
 from bson import ObjectId
 import bcrypt
+import os
 
 # Connect to MongoDB
-client = MongoClient(
-    "mongodb://elise:elise_can_open_doors@localhost:27017/elise_db?authSource=admin"
-)
+client = MongoClient(os.getenv("MONGO_URI"))
 db = client.elise_db
 
 # User info
 user_data = {
-    "name": "Andrea", 
-    "surename": "Lara",
-    "email": "andrea@healthailabs.com",
+    "name": "Michael", 
+    "surename": "Perez",
+    "email": "mperez@healthailabs.com",
     "phone_number": "+52 55 5555 5555",
     "password": bcrypt.hashpw("¿Cuál es su pass?".encode(), bcrypt.gensalt())
 }

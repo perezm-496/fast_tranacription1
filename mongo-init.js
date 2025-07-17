@@ -22,7 +22,6 @@ db.createCollection('consultations');
 db.createCollection('temp_files');
 
 // Create indexes for better performance
-db.patients.createIndex({ "patient_id": 1 }, { unique: true });
 db.consultations.createIndex({ "consultation_id": 1 }, { unique: true });
 db.temp_files.createIndex({ "file_id": 1 }, { unique: true });
 
