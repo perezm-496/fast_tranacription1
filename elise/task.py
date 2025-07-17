@@ -67,14 +67,43 @@ def transcribe_audio_task(file_id: str, consultation_id: str):
 @celery_app.task(name="tasks.complete_chat_task")
 def complete_chat_task(prompt: str, consultation_id: str):
     # Get the chat completion from OpenAI
-    answer = complete_chat(prompt)
+    try:
+        # Get the consultation and its resources
+        consultation = db.consultations.find_one({"consultation_id": consultation_id})
+        if not consultation:
+            raise Exception(f"Consultation with ID {consultation_id} not found")
+        
+        resources = consultation.get("resources", [])
+        if not resources:
+            raise Exception("No resources found for this consultation")
+        
+        # Concatenate all resources into a single text
+        resources_text = ""
+        for resource in resources:
+            # MongoDB stores tuples as lists, so we check for list instead of tuple
+            if isinstance(resource, (tuple, list)) and len(resource) >= 2:
+                if resource[0] == 'transcript' and len(resource) == 3:
+                    # Format: ('transcript', upload_time, transcription)
+                    resources_text += f"Transcripción ({resource[1]}): {resource[2]}\n\n"
+                elif resource[0] == 'question' and len(resource) == 3:
+                    # Format: ('question', prompt, answer)
+                    resources_text += f"Pregunta: {resource[1]}\nRespuesta: {resource[2]}\n\n"
+        
+        # Create the report using OpenAI
+        print(f"Resources of {consultation_id} text: {resources_text}")
+
+        prompt += "Context: " + resources_text
+        
+        answer = complete_chat(prompt)
+        # Add the chat Q&A to the consultation's resources list as a tuple
+        chat_tuple = ('question', prompt, answer)
+        db.consultations.update_one(
+            {"consultation_id": consultation_id},
+            {"$push": {"resources": chat_tuple}}
+        )
+    except Exception as e:
+        raise e
     
-    # Add the chat Q&A to the consultation's resources list as a tuple
-    chat_tuple = ('question', prompt, answer)
-    db.consultations.update_one(
-        {"consultation_id": consultation_id},
-        {"$push": {"resources": chat_tuple}}
-    )
     
     return answer
 

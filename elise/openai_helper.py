@@ -32,7 +32,7 @@ def transcribe_audio(file_path: str):
 def complete_chat(prompt: str):
     response = openai.responses.create(
         model="gpt-4-turbo",
-        instructions="Complete the text as an expert writer.", # TODO: add instructions
+        instructions="Using the provided information, answer the question presented at the end. Write in spanish. The user is a medical professional and will use the answer as a reference for the patient.", # TODO: add instructions
         input=prompt
     )
     return response.output_text

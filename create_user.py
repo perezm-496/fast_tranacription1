@@ -11,9 +11,9 @@ db = client.elise_db
 
 # User info
 user_data = {
-    "name": "Michael", 
-    "surename": "Perez",
-    "email": "mperez@healthailabs.com",
+    "name": "Andrea", 
+    "surename": "Lara",
+    "email": "andrea@healthailabs.com",
     "phone_number": "+52 55 5555 5555",
     "password": bcrypt.hashpw("¿Cuál es su pass?".encode(), bcrypt.gensalt())
 }
